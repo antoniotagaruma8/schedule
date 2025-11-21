@@ -10,6 +10,11 @@ app.use(express.json());
 
 const MONGODB_URI = process.env.MONGODB_URI;
 
+// Add a check to ensure the MONGODB_URI is provided.
+if (!MONGODB_URI) {
+  throw new Error('FATAL ERROR: MONGODB_URI is not defined in the environment variables.');
+}
+
 // Connect to MongoDB
 mongoose.connect(MONGODB_URI)
   .then(() => console.log('Successfully connected to MongoDB'))
