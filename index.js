@@ -48,6 +48,20 @@ app.get('/api/schedules', async (req, res) => {
   }
 });
 
+// GET a specific schedule item by ID
+app.get('/api/schedules/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const schedule = await Schedule.findById(id);
+    if (!schedule) {
+      return res.status(404).json({ message: 'Schedule not found' });
+    }
+    res.status(200).json(schedule);
+  } catch (error) {
+    res.status(500).json({ message: 'Error fetching schedule', error });
+  }
+});
+
 // POST a new schedule item
 app.post('/api/schedules', async (req, res) => {
   try {
@@ -86,6 +100,14 @@ app.delete('/api/schedules/:id', async (req, res) => {
     res.status(500).json({ message: 'Error deleting schedule', error });
   }
 });
+
+// Start the server for local development if not in a serverless environment
+if (process.env.NODE_ENV !== 'test') { // Avoid starting server during tests
+  const PORT = process.env.PORT || 3000;
+  app.listen(PORT, () => {
+    console.log(`Server is running on port ${PORT}`);
+  });
+}
 
 // Export the app to be used by Vercel. Vercel will automatically
 // handle the server listening part.
