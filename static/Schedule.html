@@ -1,0 +1,605 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Antonio's Class Schedule (Database Connected)</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* Custom font and basic styling */
+        body { font-family: 'Inter', sans-serif; background-color: #f4f7fa; }
+        
+        /* Define color palette for classes to make it intuitive */
+        .color-geo { background-color: #4CAF50; } /* Green for Geography/History */
+        .color-ing { background-color: #8B5CF6; } /* Violet for English Advanced */
+        .color-mod { background-color: #3B82F6; } /* Blue for Modular/Other English */
+        .color-reunion { background-color: #FBBF24; } /* Amber for Meetings / Custom Events */
+        .color-empty { background-color: #e5e7eb; color: #6b7280; } /* Light Gray for empty slots */
+
+        /* Base styles for a session cell container (applied to anchor or div) */
+        .session-cell {
+            padding: 8px 12px;
+            border-radius: 8px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            /* REVISION: Row height reduced by 20% */
+            min-height: 56px; 
+            display: flex; 
+            flex-direction: column;
+            justify-content: center; /* Center content vertically */
+        }
+        
+        /* Ensure the anchor element fills the TD and changes cursor to pointer */
+        .session-link {
+             display: block;
+             text-decoration: none;
+             transition: all 0.2s ease-in-out;
+             cursor: pointer;
+        }
+
+        .session-link:hover {
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            transform: translateY(-2px);
+        }
+
+        /* Styling for the free/empty slots */
+        .free-slot {
+            height: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            /* REVISION: Row height reduced by 20% */
+            min-height: 56px;
+        }
+        
+        /* Modal Backdrop */
+        .modal-backdrop {
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background-color: rgba(0, 0, 0, 0.5);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 50;
+        }
+        .modal-content {
+            background-color: white;
+            padding: 24px;
+            border-radius: 12px;
+            max-width: 90%;
+            max-height: 90%;
+            overflow-y: auto;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+        }
+    </style>
+</head><body>
+
+    <div class="container mx-auto p-4 sm:p-8">
+        <header class="text-center mb-6 flex justify-between items-start flex-wrap">
+            <div>
+                <h1 class="text-4xl font-extrabold text-gray-900 mb-2 text-left">IES Simone Veil</h1>
+                <p class="text-xl text-gray-500 text-left">My Schedule | AY: 2025-2026</p>
+                <p class="text-lg text-gray-500 text-left">LA: Antonio</p>
+            </div>
+            <div id="authContainer" class="flex flex-col items-end mt-4 sm:mt-0" role="toolbar">
+                <!-- Login/Logout buttons will be inserted here by JavaScript -->
+                <a href="/login" id="loginBtn" class="bg-blue-600 text-white px-6 py-2 rounded-lg shadow-lg hover:bg-blue-700 transition duration-150">
+                    Login with Google
+                </a>
+                <button id="settingsBtn" class="hidden bg-gray-800 text-white px-4 py-2 rounded-lg shadow-lg hover:bg-gray-700 transition duration-150 mb-2">
+                    Settings
+                </button>
+                <a href="/logout" id="logoutBtn" class="hidden text-sm text-gray-600 hover:text-red-600">Logout</a>
+                <p id="userInfo" class="text-sm text-gray-500 mt-1"></p>
+            </div>
+        </header>
+
+        <div id="notificationBar" class="hidden bg-green-100 border-l-4 border-green-500 text-green-700 p-4 mb-4 rounded-md" role="alert">
+            <p class="font-bold">Success!</p>
+            <p id="notificationText">Links saved successfully.</p>
+        </div>
+        
+        <div id="loadingIndicator" class="text-center p-8 text-lg font-medium text-blue-600">
+            <div class="animate-spin inline-block w-8 h-8 border-4 border-blue-500 border-t-transparent rounded-full mr-2"></div>
+            Loading schedule...
+        </div>
+
+        <div id="scheduleContainer" class="overflow-x-auto shadow-2xl rounded-xl hidden">
+            <table class="w-full text-sm text-left text-gray-700">
+                
+                <thead class="text-xs text-white uppercase bg-gray-800 sticky top-0">
+                    <tr>
+                        <th scope="col" class="py-3 px-2 sm:px-4 w-1/12 rounded-tl-xl">Sesión</th>
+                        <th scope="col" class="py-3 px-2 sm:px-4 w-2/12">Horario</th>
+                        <th scope="col" class="py-3 px-2 sm:px-4 w-2/12">LUNES</th>
+                        <th scope="col" class="py-3 px-2 sm:px-4 w-2/12">MARTES</th>
+                        <th scope="col" class="py-3 px-2 sm:px-4 w-2/12">MIÉRCOLES</th>
+                        <th scope="col" class="py-3 px-2 sm:px-4 w-2/12 rounded-tr-xl">JUEVES</th>
+                    </tr>
+                </thead>
+
+                <tbody>
+                    
+                    <tr class="border-b border-gray-200">
+                        <td class="py-3 px-2 sm:px-4 font-semibold text-gray-900">1ª</td>
+                        <td class="py-3 px-2 sm:px-4 text-gray-500">8:00-8:55</td>
+                        
+                        <td class="p-1 sm:p-2">
+                            <a href="#" target="_blank" rel="noopener noreferrer" id="link_lun_1" data-slot="lun_1" class="session-cell session-link text-white color-geo">
+                                <span class="font-bold block text-sm">4º D-E (G/H)</span>
+                                <span class="block text-xs">Prof. Álvaro · Aula C 01</span>
+                            </a>
+                        </td>
+                        
+                        <td class="p-1 sm:p-2">
+                            <a href="#" target="_blank" rel="noopener noreferrer" id="link_mar_1" data-slot="mar_1" class="session-cell session-link text-white color-geo">
+                                <span class="font-bold block text-sm">4º B-C (G/H)</span>
+                                <span class="block text-xs">Prof. Álvaro · Aula C 14</span>
+                            </a>
+                        </td>
+                        
+                        <td class="p-1 sm:p-2">
+                            <a href="#" target="_blank" rel="noopener noreferrer" id="link_mie_1" data-slot="mie_1" class="session-cell session-link text-white color-geo">
+                                <span class="font-bold block text-sm">4º A-B (G/H)</span>
+                                <span class="block text-xs">Prof. Javier · Aula C 12</span>
+                            </a>
+                        </td>
+                        
+                        <td class="p-1 sm:p-2">
+                            <a href="#" target="_blank" rel="noopener noreferrer" id="link_jue_1" data-slot="jue_1" class="session-cell session-link text-white color-ing">
+                                <span class="font-bold block text-sm">3º D-E (Ing. Av)</span>
+                                <span class="block text-xs">Prof. Camelia · Aula N 01</span>
+                            </a>
+                        </td>
+                    </tr>
+
+                    <tr class="border-b border-gray-200">
+                        <td class="py-3 px-2 sm:px-4 font-semibold text-gray-900">2ª</td>
+                        <td class="py-3 px-2 sm:px-4 text-gray-500">8:55-9:50</td>
+                        
+                        <td class="p-1 sm:p-2">
+                            <div id="link_lun_2" data-slot="lun_2" class="session-cell color-empty free-slot">
+                                <span class="font-bold block text-sm">FREE</span>
+                            </div>
+                        </td>
+                        
+                        <td class="p-1 sm:p-2">
+                            <a href="#" target="_blank" rel="noopener noreferrer" id="link_mar_2" data-slot="mar_2" class="session-cell session-link text-white color-geo">
+                                <span class="font-bold block text-sm">3º A-C (G/H)</span>
+                                <span class="block text-xs">Prof. Javier · Aula N 05</span>
+                            </a>
+                        </td>
+                        
+                        <td class="p-1 sm:p-2">
+                            <a href="#" target="_blank" rel="noopener noreferrer" id="link_mie_2" data-slot="mie_2" class="session-cell session-link text-white color-ing">
+                                <span class="font-bold block text-sm">3º D-E (Ing. Av)</span>
+                                <span class="block text-xs">Prof. Camelia · Aula N 01</span>
+                            </a>
+                        </td>
+                        
+                        <td class="p-1 sm:p-2">
+                            <a href="#" target="_blank" rel="noopener noreferrer" id="link_jue_2" data-slot="jue_2" class="session-cell session-link text-white color-ing">
+                                <span class="font-bold block text-sm">3º B-C (Ing. Av)</span>
+                                <span class="block text-xs">Prof. Camelia · Aula C 01</span>
+                            </a>
+                        </td>
+                    </tr>
+                    
+                    <tr class="border-b border-gray-200">
+                        <td class="py-3 px-2 sm:px-4 font-semibold text-gray-900">3ª</td>
+                        <td class="py-3 px-2 sm:px-4 text-gray-500">9:50-10:45</td>
+                        
+                        <td class="p-1 sm:p-2">
+                            <a href="#" target="_blank" rel="noopener noreferrer" id="link_lun_3" data-slot="lun_3" class="session-cell session-link text-white color-geo">
+                                <span class="font-bold block text-sm">3º B-C (G/H)</span>
+                                <span class="block text-xs">Prof. Álvaro · Aula N 15</span>
+                            </a>
+                        </td>
+                        
+                        <td class="p-1 sm:p-2">
+                            <a href="#" target="_blank" rel="noopener noreferrer" id="link_mar_3" data-slot="mar_3" class="session-cell session-link text-white color-reunion">
+                                <span class="font-bold block text-sm">Reunión Bilingüe</span>
+                            </a>
+                        </td>
+                        
+                        <td class="p-1 sm:p-2">
+                            <a href="#" target="_blank" rel="noopener noreferrer" id="link_mie_3" data-slot="mie_3" class="session-cell session-link text-white color-ing">
+                                <span class="font-bold block text-sm">3º B-C (Ing. Av)</span>
+                                <span class="block text-xs">Prof. Camelia · Aula N 14</span>
+                            </a>
+                        </td>
+                        
+                        <td class="p-1 sm:p-2">
+                            <a href="#" target="_blank" rel="noopener noreferrer" id="link_jue_3" data-slot="jue_3" class="session-cell session-link text-white color-reunion">
+                                <span class="font-bold block text-base text-center">Reunión con Coordinadora</span>
+                            </a>
+                        </td>
+                    </tr>
+
+                    <tr class="border-b border-gray-300">
+                        <td class="py-3 px-2 sm:px-4 font-semibold text-white bg-red-600">RECREO</td>
+                        <td class="py-3 px-2 sm:px-4 font-semibold text-white bg-red-600">10:45-11:10</td>
+                        <td colspan="4" class="p-0">
+                            <div class="h-full bg-red-500 text-white text-center text-xl p-3">
+                                ¡DESCANSO!
+                            </div>
+                        </td>
+                        </tr>
+
+                    <tr class="border-b border-gray-200">
+                        <td class="py-3 px-2 sm:px-4 font-semibold text-gray-900">4ª</td>
+                        <td class="py-3 px-2 sm:px-4 text-gray-500">11:10-12:05</td>
+                        
+                        <td class="p-1 sm:p-2">
+                            <a href="#" target="_blank" rel="noopener noreferrer" id="link_lun_4" data-slot="lun_4" class="session-cell session-link text-white color-ing">
+                                <span class="font-bold block text-sm">1º Bach D-E (Ing. Av)</span>
+                                <span class="block text-xs">Prof. Mamen · Aula C04</span>
+                            </a>
+                        </td>
+                        
+                        <td class="p-1 sm:p-2">
+                            <a href="#" target="_blank" rel="noopener noreferrer" id="link_mar_4" data-slot="mar_4" class="session-cell session-link text-white color-ing">
+                                <span class="font-bold block text-sm">3º A-C (Ing. Av)</span>
+                                <span class="block text-xs">Prof. Florenta · Aula N 03</span>
+                            </a>
+                        </td>
+                        
+                        <td class="p-1 sm:p-2">
+                            <a href="#" target="_blank" rel="noopener noreferrer" id="link_mie_4" data-slot="mie_4" class="session-cell session-link text-white color-mod">
+                                <span class="font-bold block text-sm">1º Bach D-E (Modular)</span>
+                                <span class="block text-xs">Prof. Daniel · Aula M2</span>
+                            </a>
+                        </td>
+                        
+                        <td class="p-1 sm:p-2">
+                             <div id="link_jue_4" data-slot="jue_4" class="session-cell color-empty free-slot">
+                                <span class="font-bold block text-sm">FREE</span>
+                            </div>
+                        </td> 
+                    </tr>
+
+                    <tr class="border-b border-gray-200">
+                        <td class="py-3 px-2 sm:px-4 font-semibold text-gray-900">5ª</td>
+                        <td class="py-3 px-2 sm:px-4 text-gray-500">12:05-13:00</td>
+                        
+                        <td class="p-1 sm:p-2">
+                            <a href="#" target="_blank" rel="noopener noreferrer" id="link_lun_5" data-slot="lun_5" class="session-cell session-link text-white color-ing">
+                                <span class="font-bold block text-sm">3º A-C (Ing. Av)</span>
+                                <span class="block text-xs">Prof. Florenta · Aula N 03</span>
+                            </a>
+                        </td>
+                        
+                        <td class="p-1 sm:p-2">
+                            <a href="#" target="_blank" rel="noopener noreferrer" id="link_mar_5" data-slot="mar_5" class="session-cell session-link text-white color-geo">
+                                <span class="font-bold block text-sm">3º D-E (G/H)</span>
+                                <span class="block text-xs">Prof. Javier · Aula N 01</span>
+                            </a>
+                        </td>
+                        
+                        <td class="p-1 sm:p-2">
+                            <div id="link_mie_5" data-slot="mie_5" class="session-cell color-empty free-slot">
+                                <span class="font-bold block text-sm">FREE</span>
+                            </div>
+                        </td>
+                        
+                        <td class="p-1 sm:p-2">
+                            <div id="link_jue_5" data-slot="jue_5" class="session-cell color-empty free-slot">
+                                <span class="font-bold block text-sm">FREE</span>
+                            </div>
+                        </td>
+                    </tr>
+
+                    <tr class="border-b border-gray-200">
+                        <td class="py-3 px-2 sm:px-4 font-semibold text-gray-900 rounded-bl-xl">6ª</td>
+                        <td class="py-3 px-2 sm:px-4 text-gray-500 rounded-br-xl">13:00-13:55</td>
+                        
+                        <td class="p-1 sm:p-2">
+                            <a href="#" target="_blank" rel="noopener noreferrer" id="link_lun_6" data-slot="lun_6" class="session-cell session-link text-white color-ing">
+                                <span class="font-bold block text-sm">4º A-B (Ing. Av)</span>
+                                <span class="block text-xs">Prof. Rocio · Aula C 13</span>
+                            </a>
+                        </td>
+                        
+                        <td class="p-1 sm:p-2">
+                            <div id="link_mar_6" data-slot="mar_6" class="session-cell color-empty free-slot">
+                                <span class="font-bold block text-sm">FREE</span>
+                            </div>
+                        </td>
+                        
+                        <td class="p-1 sm:p-2">
+                            <a href="#" target="_blank" rel="noopener noreferrer" id="link_mie_6" data-slot="mie_6" class="session-cell session-link text-white color-mod">
+                                <span class="font-bold block text-sm">4º B-C (Inglés)</span>
+                                <span class="block text-xs">Prof. Florenta · Aula C11</span>
+                            </a>
+                        </td>
+                        
+                        <td class="p-1 sm:p-2">
+                            <div id="link_jue_6" data-slot="jue_6" class="session-cell color-empty free-slot">
+                                <span class="font-bold block text-sm">FREE</span>
+                            </div>
+                        </td>
+                    </tr>
+                    
+                </tbody>
+            </table>
+        </div>
+
+        <footer class="mt-10 text-center text-sm text-gray-400">
+            <p>Links are saved to a central database and will be available on any device.</p>
+        </footer>
+    </div>
+
+    <div id="settingsModal" class="modal-backdrop">
+        <div class="modal-content w-full md:w-3/4 lg:w-1/2">
+            <h2 class="text-2xl font-bold mb-4 text-gray-900">Class Link Configuration</h2>
+            <p class="text-sm text-gray-600 mb-6">Enter the full URL (Google Meet, Zoom, etc.) for each session below. Your changes will be saved to the database.</p>
+            
+            <form id="linkForm">
+                <div id="linkInputsContainer" class="space-y-4 max-h-96 overflow-y-auto pr-2 mb-6">
+                    </div>
+                
+                <div class="flex justify-end space-x-3 pt-4 border-t">
+                    <button type="button" id="cancelSettingsBtn" class="bg-gray-300 text-gray-800 px-4 py-2 rounded-lg hover:bg-gray-400 transition">
+                        Cancel
+                    </button>
+                    <button type="submit" id="saveLinksBtn" class="bg-blue-600 text-white px-6 py-2 rounded-lg shadow-md hover:bg-blue-700 transition">
+                        Save Links
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+
+    <script>
+        const API_BASE_URL = ''; // Requests will be relative to the current domain
+        let scheduleLinks = {}; // In-memory cache for schedule links, maps slot_id to link URL
+        let isModalContentGenerated = false; // Performance flag
+        let currentUser = null; // To store logged-in user info
+
+        /**
+         * Main entry point, called when the page content is loaded.
+         */
+        async function initializeSchedule() {
+            console.log("Initializing schedule from backend...");
+            const loadingIndicator = document.getElementById('loadingIndicator');
+            const scheduleContainer = document.getElementById('scheduleContainer');
+            loadingIndicator.classList.remove('hidden');
+            scheduleContainer.classList.add('hidden');
+
+            try {
+                // First, check who is logged in
+                await checkUserStatus();
+                updateAuthUI();
+
+                // Fetch links from our new backend server
+                const response = await fetch(`${API_BASE_URL}/schedule`);
+                if (!response.ok) throw new Error(`API Error: ${response.statusText}`);
+                
+                const data = await response.json();
+                scheduleLinks = data.links || {};
+                console.log("Loaded links:", scheduleLinks);
+
+                updateScheduleDisplay(scheduleLinks);
+                generateLinkInputs();
+
+            } catch (error) {
+                console.error("Failed to initialize schedule:", error);
+                loadingIndicator.innerText = 'Error connecting to backend. Is the server running?';
+            }
+            
+            // Hide loading indicator and show schedule
+            loadingIndicator.classList.add('hidden');
+            scheduleContainer.classList.remove('hidden');
+
+            // Setup event listeners now that the DOM is ready
+            setupEventListeners();
+        }
+
+        /**
+         * Checks the /me endpoint to see if a user is logged in.
+         */
+        async function checkUserStatus() {
+            try {
+                const response = await fetch(`${API_BASE_URL}/me`);
+                const data = await response.json();
+                currentUser = data.user;
+                console.log("Current user:", currentUser);
+            } catch (error) {
+                console.error("Could not check user status:", error);
+                currentUser = null;
+            }
+        }
+
+        /**
+         * Updates the UI (login/logout/settings buttons) based on login status.
+         */
+        function updateAuthUI() {
+            const loginBtn = document.getElementById('loginBtn');
+            const logoutBtn = document.getElementById('logoutBtn');
+            const settingsBtn = document.getElementById('settingsBtn');
+            const userInfo = document.getElementById('userInfo');
+
+            loginBtn.classList.toggle('hidden', !!currentUser);
+            logoutBtn.classList.toggle('hidden', !currentUser);
+            settingsBtn.classList.toggle('hidden', !currentUser);
+            userInfo.textContent = currentUser ? `Logged in as ${currentUser.email}` : '';
+        }
+
+        /**
+         * Updates the href attributes and styles in the table based on data from the backend.
+         */
+        function updateScheduleDisplay(links) {
+            document.querySelectorAll('a.session-link[data-slot]').forEach(linkElement => {
+                const slotId = linkElement.dataset.slot;
+                const link = links[slotId];
+
+                if (link) {
+                    linkElement.href = link;
+                    linkElement.classList.add('border-2', 'border-yellow-300', 'shadow-yellow-200/50');
+                } else {
+                    linkElement.href = '#';
+                    linkElement.classList.remove('border-2', 'border-yellow-300', 'shadow-yellow-200/50');
+                }
+            });
+        }
+
+        /**
+         * Generates the input fields inside the settings modal.
+         */
+        function generateLinkInputs() {
+            // Performance: Only generate the content once to avoid re-creating DOM elements.
+            if (isModalContentGenerated) return;
+
+            const container = document.getElementById('linkInputsContainer');
+            const scheduleElements = document.querySelectorAll('[data-slot]');
+            let html = '';
+
+            // Step 1: Group all schedule elements by the day prefix (lun, mar, etc.)
+            const groupedByDay = { lun: [], mar: [], mie: [], jue: [] };
+            scheduleElements.forEach(el => {
+                const dayPrefix = el.dataset.slot.substring(0, 3);
+                if (groupedByDay[dayPrefix]) {
+                    groupedByDay[dayPrefix].push(el);
+                }
+            });
+
+            // Step 2: Define the order and proper titles for the days
+            const dayOrder = [
+                { key: 'lun', title: 'Lunes' },
+                { key: 'mar', title: 'Martes' },
+                { key: 'mie', title: 'Miércoles' },
+                { key: 'jue', title: 'Jueves' }
+            ];
+
+            // Step 3: Generate the HTML for each day group in the correct order
+            dayOrder.forEach(dayInfo => {
+                const dayKey = dayInfo.key;
+                const dayTitle = dayInfo.title;
+                const elementsForDay = groupedByDay[dayKey];
+
+                // Sort slots within each day by session number (e.g., lun_1, lun_2)
+                elementsForDay.sort((a, b) => a.dataset.slot.localeCompare(b.dataset.slot));
+
+                // Add a nice heading for the day group
+                html += `<h3 class="text-lg font-semibold text-gray-800 mt-4 mb-2 border-b pb-1">${dayTitle}</h3>`;
+
+                elementsForDay.forEach(el => {
+                    const slotId = el.dataset.slot;
+                    // We don't need to show inputs for "FREE" slots
+                    const isFreeSlot = el.classList.contains('free-slot');
+                    if (isFreeSlot) return;
+
+                    // Create a more descriptive label
+                    const titleText = el.querySelector('.font-bold')?.innerText || 'Unknown Slot';
+                    const labelTitle = `${slotId.replace(dayKey + '_', '')}ª Hora: ${titleText}`; // e.g., "1ª Hora: 4º D-E (G/H)"
+                    const savedUrl = scheduleLinks[slotId] || '';
+                    
+                    // Generate the HTML for the label and input field.
+                    // Using flexbox for better alignment on different screen sizes.
+                    html += `
+                        <div class="sm:flex sm:items-center">
+                            <label for="input_${slotId}" class="block text-sm font-medium text-gray-700 sm:w-1/3">${labelTitle}</label>
+                            <input type="url" id="input_${slotId}" data-slot-id="${slotId}" value="${savedUrl}" placeholder="https://meet.google.com/..." class="mt-1 block w-full sm:w-2/3 border border-gray-300 rounded-md shadow-sm p-2 text-sm focus:ring-blue-500 focus:border-blue-500">
+                        </div>
+                    `;
+                });
+            });
+
+            container.innerHTML = html;
+            isModalContentGenerated = true;
+        }
+
+        /**
+         * Collects all links from the modal and sends them to the backend in a single request.
+         */
+        async function saveLinks(event) {
+            event.preventDefault();
+            const inputs = document.querySelectorAll('#linkInputsContainer input[type="url"]');
+            const saveButton = document.getElementById('saveLinksBtn');
+            const updatedLinks = {};
+
+            saveButton.disabled = true;
+            saveButton.textContent = 'Saving...';
+
+            try {
+                inputs.forEach(input => {
+                    const slotId = input.dataset.slotId;
+                    const value = input.value.trim();
+                    // Always include the key. If the value is empty, it signifies a deletion.
+                    // The backend should be prepared to handle empty strings.
+                    updatedLinks[slotId] = value;
+                });
+
+                // Send the entire links object to the backend to be saved in MongoDB
+                await fetch(`${API_BASE_URL}/schedule`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ links: updatedLinks })
+                });
+
+                // Update local state and UI immediately for a faster feel
+                scheduleLinks = updatedLinks;
+                updateScheduleDisplay(scheduleLinks);
+                closeSettings();
+                showNotification('Schedule links saved successfully to the database!');
+                
+            } catch (error) {
+                console.error("Failed to save links:", error);
+                showNotification('Error: Could not save links. Please check your connection.', 'bg-red-100 border-l-4 border-red-500 text-red-700');
+            } finally {
+                saveButton.disabled = false;
+                saveButton.textContent = 'Save Links';
+            }
+        }
+
+        /**
+         * Opens the settings modal.
+         */
+        function openSettings() {
+            // The content is now pre-generated, so we just update the values.
+            document.querySelectorAll('#linkInputsContainer input[type="url"]').forEach(input => {
+                const slotId = input.dataset.slotId;
+                input.value = scheduleLinks[slotId] || '';
+            });
+            document.getElementById('settingsModal').style.display = 'flex';
+        }
+
+        /**
+         * Closes the settings modal.
+         */
+        function closeSettings() {
+            document.getElementById('settingsModal').style.display = 'none';
+        }
+
+        /**
+         * Shows a temporary notification banner.
+         */
+        function showNotification(message, classes = 'bg-green-100 border-l-4 border-green-500 text-green-700') {
+            const bar = document.getElementById('notificationBar');
+            const text = document.getElementById('notificationText');
+            
+            bar.className = `p-4 mb-4 rounded-md hidden`; // Reset classes first
+            bar.className = `${classes} p-4 mb-4 rounded-md`;
+            text.textContent = message;
+            bar.classList.remove('hidden');
+
+            // Hide after 5 seconds
+            setTimeout(() => {
+                bar.classList.add('hidden');
+            }, 5000);
+        }
+
+        /**
+         * Centralized event listener setup.
+         */
+        function setupEventListeners() {
+            document.getElementById('settingsBtn').addEventListener('click', openSettings);
+            document.getElementById('cancelSettingsBtn').addEventListener('click', closeSettings);
+            document.getElementById('linkForm').addEventListener('submit', saveLinks);
+        }
+
+        // Main entry point
+        document.addEventListener('DOMContentLoaded', initializeSchedule);
+    </script>
+</body>
+</html>
