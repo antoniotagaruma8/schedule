@@ -6,7 +6,7 @@ const Schedule = require('./models/Schedule'); // Import the Schedule model
 const app = express();
 
 // Middleware to parse JSON bodies from incoming requests
-app.express.json());
+app.use(express.json());
 
 const MONGODB_URI = process.env.MONGODB_URI;
 
