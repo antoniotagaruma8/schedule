@@ -1,8 +1,12 @@
 const express = require('express');
 const mongoose = require('mongoose');
 require('dotenv').config(); // Load environment variables from .env file
+const Schedule = require('./models/Schedule'); // Import the Schedule model
 
 const app = express();
+
+// Middleware to parse JSON bodies from incoming requests
+app.express.json());
 
 const MONGODB_URI = process.env.MONGODB_URI;
 
@@ -25,6 +29,29 @@ app.get('/', (req, res) => {
 app.get('/api/greet', (req, res) => {
   const { name = 'World' } = req.query;
   res.json({ message: `Hello, ${name}!` });
+});
+
+// --- API Endpoints for Schedules ---
+
+// GET all schedule items
+app.get('/api/schedules', async (req, res) => {
+  try {
+    const schedules = await Schedule.find().sort({ date: 1 });
+    res.status(200).json(schedules);
+  } catch (error) {
+    res.status(500).json({ message: 'Error fetching schedules', error });
+  }
+});
+
+// POST a new schedule item
+app.post('/api/schedules', async (req, res) => {
+  try {
+    const newSchedule = new Schedule(req.body);
+    await newSchedule.save();
+    res.status(201).json(newSchedule);
+  } catch (error) {
+    res.status(400).json({ message: 'Error creating schedule', error });
+  }
 });
 
 // Export the app to be used by Vercel. Vercel will automatically
