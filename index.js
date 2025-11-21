@@ -54,6 +54,34 @@ app.post('/api/schedules', async (req, res) => {
   }
 });
 
+// PUT (update) a specific schedule item by ID
+app.put('/api/schedules/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const updatedSchedule = await Schedule.findByIdAndUpdate(id, req.body, { new: true, runValidators: true });
+    if (!updatedSchedule) {
+      return res.status(404).json({ message: 'Schedule not found' });
+    }
+    res.status(200).json(updatedSchedule);
+  } catch (error) {
+    res.status(400).json({ message: 'Error updating schedule', error });
+  }
+});
+
+// DELETE a specific schedule item by ID
+app.delete('/api/schedules/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const deletedSchedule = await Schedule.findByIdAndDelete(id);
+    if (!deletedSchedule) {
+      return res.status(404).json({ message: 'Schedule not found' });
+    }
+    res.status(200).json({ message: 'Schedule deleted successfully' });
+  } catch (error) {
+    res.status(500).json({ message: 'Error deleting schedule', error });
+  }
+});
+
 // Export the app to be used by Vercel. Vercel will automatically
 // handle the server listening part.
 module.exports = app;
