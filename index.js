@@ -1,7 +1,7 @@
 const express = require('express');
 const mongoose = require('mongoose');
 require('dotenv').config(); // Load environment variables from .env file
-const Schedule = require('./models/Schedule'); // Import the Schedule model
+const Schedule = require('./Schedule.js'); // Import the Schedule model
 
 const app = express();
 
