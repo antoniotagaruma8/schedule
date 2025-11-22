@@ -1,5 +1,6 @@
 const express = require('express');
 const mongoose = require('mongoose');
+const scheduleRoutes = require('../routes'); // Import the routes from the parent directory
 
 // Check if environment variables are loaded, especially in development
 if (process.env.NODE_ENV !== 'production') {
@@ -10,6 +11,9 @@ const app = express();
 
 // Middleware to parse JSON
 app.use(express.json());
+
+// Use the schedule routes
+app.use(scheduleRoutes);
 
 // A simple test route
 app.get('/', (req, res) => {
