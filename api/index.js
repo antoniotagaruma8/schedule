@@ -20,6 +20,11 @@ app.get('/', (req, res) => {
   res.send('Express on Vercel with Mongoose!');
 });
 
+// Add a specific health check route
+app.get('/health', (req, res) => {
+  res.status(200).send('API is healthy');
+});
+
 // Connect to MongoDB
 // Make sure to set MONGODB_URI in your Vercel project environment variables
 const dbUri = process.env.MONGODB_URI;
