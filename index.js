@@ -1,6 +1,6 @@
 const express = require('express');
 const mongoose = require('mongoose');
-const scheduleRoutes = require('../routes'); // Import the routes from the parent directory
+const scheduleRoutes = require('./routes'); // Import routes from the same directory
 
 // Check if environment variables are loaded, especially in development
 if (process.env.NODE_ENV !== 'production') {
