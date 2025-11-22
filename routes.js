@@ -1,5 +1,5 @@
 const express = require('express');
-const Schedule = require('../Schedule.js'); // Adjust path to your model
+const Schedule = require('./Schedule.js'); // Correct path to your model
 
 const router = express.Router();
 
