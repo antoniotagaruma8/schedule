@@ -1,24 +1,17 @@
 {
   "name": "schedule-api",
   "version": "1.0.0",
-  "description": "A simple scheduling API with Express and Mongoose.",
-  "main": "api/index.js",
-  "scripts": {
-    "start": "node api/index.js",
-    "dev": "nodemon api/index.js",
-    "test": "echo \"Error: no test specified\" && exit 1",
-    "build": "npm install"
-  },
+  "description": "A serverless schedule application.",
   "keywords": [
-    "express",
-    "mongoose",
     "api"
   ],
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "cookie": "^0.6.0",
+    "cookie-signature": "^1.2.1",
     "dotenv": "^16.6.1",
-    "express": "^4.21.2",
-    "mongoose": "^8.20.1"
+    "mongodb": "^6.8.0",
+    "node-fetch": "^2.7.0"
   }
 }
